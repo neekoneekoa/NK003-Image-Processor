@@ -136,25 +136,47 @@ class ImageProcessor:
     def on_drop(self, event):
         """处理拖放事件"""
         file_paths = event.data
-        # 处理Windows路径格式（去掉大括号）
-        if file_paths.startswith("{"):
-            # 检查是否包含多个文件（有多个花括号）
-            if "}" in file_paths[1:]:
-                # 分割多个文件路径
-                file_paths = file_paths[1:-1].split("} {")
-            else:
-                file_paths = [file_paths[1:-1]]
-        else:
-            file_paths = [file_paths]
         
-        # 处理每个文件路径
+        # 打印原始数据以进行调试
+        print(f"原始拖放数据: {file_paths}")
+        
+        # 处理Windows路径格式
+        # 首先去掉可能的大括号
+        if file_paths.startswith("{") and file_paths.endswith("}"):
+            file_paths = file_paths[1:-1]
+        
+        # 处理空格转义
+        file_paths = file_paths.replace("\\ ", " ")
+        
+        # 清理路径字符串
+        file_paths = file_paths.strip(' "\'')
+        
+        # 定义图片文件扩展名
+        image_extensions = [".png", ".jpg", ".jpeg", ".bmp", ".gif"]
+        
+        # 更简单的方法：使用split()分割，然后重新组合
+        parts = file_paths.split(" ")
         valid_images = []
-        for file_path in file_paths:
-            # 处理空格转义
-            file_path = file_path.replace("\\ ", " ")
-            # 检查是否为图片文件
-            if file_path.lower().endswith((".png", ".jpg", ".jpeg", ".bmp", ".gif")):
-                valid_images.append(file_path)
+        current_path = ""
+        
+        for part in parts:
+            current_path += part
+            # 检查当前路径是否包含完整的图片文件路径
+            for ext in image_extensions:
+                if current_path.lower().endswith(ext):
+                    # 找到完整的图片路径
+                    valid_images.append(current_path.strip())
+                    current_path = ""
+                    break
+            else:
+                # 如果没有找到扩展名，添加空格继续组合
+                current_path += " "
+        
+        # 打印处理后的路径列表
+        print(f"处理后的路径列表: {valid_images}")
+        
+        # 过滤有效的图片文件
+        valid_images = [path for path in valid_images if os.path.isfile(path)]
         
         if valid_images:
             # 将有效的图片添加到队列
